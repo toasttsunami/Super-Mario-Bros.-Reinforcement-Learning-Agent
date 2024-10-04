@@ -45,25 +45,36 @@ for i in range(start_episode, NUM_OF_EPISODES):
     done = False
     state, _ = env.reset()
     episode_reward = 0
-    episode_learning_data = []
+    # if i == 0:
+    #     agent.clear_memory()
 
+    episode_learning_data = []
     agent.learning_data = []
+
     while not done:
         action = agent.choose_action(state)
         new_state, reward, done, truncated, info = env.step(action)
         agent.store_in_memory(state, action, reward, new_state, done)
         agent.learn()
+        agent.track_learning(reward)
         state = new_state
         episode_reward += reward
 
-    
+    for step, data in enumerate(agent.get_learning_data()):
+        episode_learning_data.append({
+            "episode": i + 1,
+            "step": step + 1,
+            **data  # include the original learning data
+        })
+
     print(
         f"episode {i+1} finished with epsilon = {agent.epsilon}, reward = {episode_reward}, loss = {agent.curr_loss}, steps = {agent.learn_step_counter}"
     )
-    if (i + 1) % 10 == 0:
-        with open(f"./vis/learning_data.json", "w") as f:
-            json.dump(agent.get_learning_data(), f)
 
+    with open(f"./vis/learning_data-1.json", "w") as f:
+        json.dump(episode_learning_data, f)
+
+    if (i + 1) % 10 == 0:
         torch.save(
             {
                 "episode": i + 1,
